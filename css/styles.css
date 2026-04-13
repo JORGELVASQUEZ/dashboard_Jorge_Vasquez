@@ -163,6 +163,21 @@ body {
     max-width: 420px;
 }
 
+/* Pin button */
+.pin-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.1em;
+    color: #ffffff;
+    padding: 6px 8px;
+    border-radius: 6px;
+}
+
+.pin-btn.pinned {
+    color: #ffd166;
+}
+
 /* Botón borrar deshabilitado */
 .delete-btn:disabled,
 .delete-btn.disabled {

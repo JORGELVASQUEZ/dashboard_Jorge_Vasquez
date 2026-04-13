@@ -66,6 +66,13 @@ function renderTasks() {
 			return true;
 		});
 
+		// Mostrar primero las tareas fijadas
+		visible.sort((a, b) => {
+			if (a.pinned && !b.pinned) return -1;
+			if (!a.pinned && b.pinned) return 1;
+			return 0;
+		});
+
 		visible.forEach(task => {
 		const item = document.createElement('div');
 		item.className = 'task-item' + (task.completed ? ' completed' : '');
@@ -107,15 +114,23 @@ function renderTasks() {
 
 		left.insertBefore(del, text);
 
-		// Edit button (inline)
-		const editBtn = document.createElement('button');
-		editBtn.className = 'edit-btn';
-		editBtn.textContent = '✏️';
-		editBtn.dataset.id = task.id;
-		editBtn.title = 'Editar tarea';
+	// Edit button (inline)
+	const editBtn = document.createElement('button');
+	editBtn.className = 'edit-btn';
+	editBtn.textContent = '✏️';
+	editBtn.dataset.id = task.id;
+	editBtn.title = 'Editar tarea';
 
-		item.appendChild(left);
-		item.appendChild(editBtn);
+	// Pin button (fijar)
+	const pinBtn = document.createElement('button');
+	pinBtn.className = 'pin-btn';
+	pinBtn.dataset.id = task.id;
+	pinBtn.textContent = task.pinned ? '📌' : '📍';
+	pinBtn.title = task.pinned ? 'Desafijar tarea' : 'Fijar tarea';
+
+	item.appendChild(left);
+	item.appendChild(pinBtn);
+	item.appendChild(editBtn);
 
 		taskList.appendChild(item);
 	});
@@ -189,6 +204,7 @@ function addTask() {
 		id: Date.now().toString(),
 		text,
 		completed: false,
+		pinned: false,
 		createdAt: Date.now(),
 	};
 
@@ -201,7 +217,19 @@ function addTask() {
 
 // Delegación para borrar y cambiar estado
 // Delegación para manejar: editar, cancelar y borrar
+
 taskList.addEventListener('click', (e) => {
+	const pin = e.target.closest('.pin-btn');
+	if (pin) {
+		const id = pin.dataset.id;
+		const task = tasks.find(t => t.id === id);
+		if (!task) return;
+		task.pinned = !task.pinned;
+		saveTasks();
+		renderTasks();
+		return;
+	}
+
 	const editBtn = e.target.closest('.edit-btn');
 	if (editBtn) {
 		const id = editBtn.dataset.id;
