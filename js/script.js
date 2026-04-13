@@ -80,6 +80,7 @@ function renderTasks() {
 		cb.dataset.id = task.id;
 
 		const text = document.createElement('span');
+		text.className = 'task-text';
 		text.textContent = task.text;
 
 		// Fecha de creación (formateada)
@@ -106,7 +107,15 @@ function renderTasks() {
 
 		left.insertBefore(del, text);
 
+		// Edit button (inline)
+		const editBtn = document.createElement('button');
+		editBtn.className = 'edit-btn';
+		editBtn.textContent = '✏️';
+		editBtn.dataset.id = task.id;
+		editBtn.title = 'Editar tarea';
+
 		item.appendChild(left);
+		item.appendChild(editBtn);
 
 		taskList.appendChild(item);
 	});
@@ -191,7 +200,71 @@ function addTask() {
 }
 
 // Delegación para borrar y cambiar estado
+// Delegación para manejar: editar, cancelar y borrar
 taskList.addEventListener('click', (e) => {
+	const editBtn = e.target.closest('.edit-btn');
+	if (editBtn) {
+		const id = editBtn.dataset.id;
+		const task = tasks.find(t => t.id === id);
+		const itemEl = editBtn.closest('.task-item');
+		if (!task || !itemEl) return;
+
+		// Si estamos en modo edición, este botón actúa como 'Guardar'
+		if (editBtn.dataset.mode === 'editing') {
+			const input = itemEl.querySelector('.task-edit-input');
+			if (!input) { renderTasks(); return; }
+			const newText = input.value.trim();
+			if (!newText) { alert('La tarea no puede estar vacía.'); input.focus(); return; }
+			if (newText.length < 5) { alert('La tarea debe tener al menos 5 caracteres.'); input.focus(); return; }
+			const exists = tasks.some(t => t.text && t.text.trim().toLowerCase() === newText.toLowerCase() && t.id !== id);
+			if (exists) { alert('Ya existe una tarea con el mismo texto. Evita duplicados.'); input.focus(); return; }
+
+			task.text = newText;
+			saveTasks();
+			renderTasks();
+			return;
+		}
+
+		// Iniciar edición: reemplazar el span por un input
+		const span = itemEl.querySelector('.task-text');
+		if (!span) return;
+		const input = document.createElement('input');
+		input.type = 'text';
+		input.className = 'task-edit-input';
+		input.value = task.text;
+		span.replaceWith(input);
+		input.focus();
+
+		// Cambiar el botón a modo 'Guardar'
+		editBtn.textContent = '💾';
+		editBtn.dataset.mode = 'editing';
+
+		// Añadir botón cancelar justo después
+		const cancel = document.createElement('button');
+		cancel.className = 'cancel-btn';
+		cancel.textContent = '✖️';
+		cancel.dataset.id = id;
+		editBtn.insertAdjacentElement('afterend', cancel);
+
+		// Teclas rápidas dentro del input: Enter = guardar, Esc = cancelar
+		input.addEventListener('keydown', (ke) => {
+			if (ke.key === 'Enter') {
+				editBtn.click();
+			} else if (ke.key === 'Escape') {
+				renderTasks();
+			}
+		});
+
+		return;
+	}
+
+	const cancel = e.target.closest('.cancel-btn');
+	if (cancel) {
+		// Simplemente re-render para descartar cambios
+		renderTasks();
+		return;
+	}
+
 	const del = e.target.closest('.delete-btn');
 	if (del) {
 		// Si el botón está deshabilitado, prevenir acción y notificar
